@@ -1,0 +1,12 @@
+{
+  "info": { "name": "Al Diyar Real Estate API", "_postman_id": "al-diyar-api" },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    { "name": "Public Properties", "request": { "method": "GET", "url": "{{baseUrl}}/properties" } },
+    { "name": "Login", "request": { "method": "POST", "header": [{"key":"Content-Type","value":"application/json"}], "body": {"mode":"raw","raw":"{\"username\":\"admin\",\"password\":\"change-this-password\"}"}, "url": "{{baseUrl}}/auth/login" } },
+    { "name": "Admin Requests", "request": { "method": "GET", "header": [{"key":"Authorization","value":"Bearer {{token}}"}], "url": "{{baseUrl}}/admin/requests" } }
+  ]
+}
