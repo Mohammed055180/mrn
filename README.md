@@ -1,54 +1,28 @@
-# الديار العقارية — Backend API
+# الديار العقارية — سوق عقاري عربي
 
-Backend كامل لـ React frontend المرفق، مبني على Node.js + Express + MongoDB/Mongoose.
+الواجهة مبنية بـ React وVite، وتُقدّم من خادم Express الحالي. قراءة الإعلانات العامة ونشر الإعلانات الجديدة يستخدمان Supabase؛ وتبقى واجهات الـ API القديمة متاحة للتوافق.
 
-## التشغيل
+## الإعداد
 
-1. ثبّت Node.js 20+.
-2. انسخ `.env.example` إلى `.env`.
-3. ضع `MONGODB_URI` و `JWT_SECRET`.
-4. أنشئ حساب الإدارة:
-   `npm install`
-   `npm run create-admin`
-5. شغّل:
-   `npm run dev`
+1. استخدم مشروع Supabase الحالي وشغّل `supabase/schema.sql` في SQL Editor.
+2. فعّل تسجيل الدخول بالبريد (magic link)، واضبط Site URL وعنوان Render ضمن Redirect URLs.
+3. انسخ `.env.example` إلى `.env`. أضف `VITE_SUPABASE_URL` و`VITE_SUPABASE_ANON_KEY`؛ لا تستخدم مفتاح `service_role` في المتصفح أو في أي متغير يبدأ بـ `VITE_`.
+4. شغّل `npm install` ثم `npm run frontend:dev` و`npm run dev` في نافذتين محلياً.
 
-## Cloudinary
+## Render
 
-ضع:
-- CLOUDINARY_CLOUD_NAME
-- CLOUDINARY_API_KEY
-- CLOUDINARY_API_SECRET
-- CLOUDINARY_FOLDER
+اضبط Build Command إلى `npm install && npm run build`، واترك Start Command `npm start`. عرّف متغيرات `VITE_SUPABASE_URL` و`VITE_SUPABASE_ANON_KEY` قبل البناء كي يضمّنهما Vite في الموقع. الخادم يحتاج كذلك `MONGODB_URI` و`JWT_SECRET` بسبب API الإدارة القديم.
 
-مسار `POST /api/properties/images` يستقبل multipart/form-data باسم `images`.
-الملفات تُرفع إلى Cloudinary، ثم تُرسل روابطها إلى `POST /api/properties`.
+## مراجعة الإعلانات والخصوصية
 
-## API
+كل إعلان جديد حالته `pending` ولا يظهر للعامة قبل الموافقة. يراجع المسؤول الإعلان في Supabase ثم يغيّر `status` إلى `published` أو `rejected`. بيانات الهاتف في `listing_contacts` ولا يقرأها إلا صاحب الإعلان. صور العقار في bucket عام للقراءة، مع رفع موثّق إلى مجلد صاحب الحساب، وصيغ JPEG/PNG/WebP وحد 5 ميغابايت.
 
-Public:
-- GET /api/properties
-- GET /api/properties/:id
-- POST /api/properties
-- POST /api/properties/images
-- POST /api/requests
-- POST /api/auth/login
+مثال اعتماد إعلان بعد التحقق منه يدوياً في Supabase SQL Editor:
 
-Admin (Bearer JWT):
-- GET /api/admin/requests
-- PATCH /api/admin/requests/:id/status
-- GET /api/admin/properties/pending
-- PATCH /api/admin/properties/:id/approve
-- PATCH /api/admin/properties/:id/featured
-- DELETE /api/admin/properties/:id
-- GET /api/admin/requests/export-csv
+```sql
+update public.listings set status = 'published', updated_at = now()
+where id = 'LISTING_UUID' and status = 'pending';
+```
 
-## فلترة العقارات
+سياسات RLS تتحقق من الملكية وحالة الإعلان. المفتاح العام آمن فقط بالاقتران مع RLS؛ لا تنشر أي `service_role`, JWT secret, MongoDB URI أو بيانات اعتماد Cloudinary.
 
-GET `/api/properties?city=الرياض&offerType=sale&propertyType=فيلا&minPrice=1000000&maxPrice=3000000&sortBy=price_asc`
-
-## ملاحظة
-
-الواجهة الأصلية تستخدم `seedProperties` و`seedRequests` و`setState` لتخزين البيانات محلياً. ملف `frontend/integration-snippets.jsx` يوضح الاستبدالات المطلوبة. كما أن رفع الصور الحالي يستخدم `URL.createObjectURL()` للمعاينة؛ هذا لا يصلح كرابط دائم، لذلك يجب رفع File objects إلى `/api/properties/images` أولاً.
-
-لإنتاج تطبيق Production فعلي، أضف HTTPS، سجلات ومراقبة، نسخاً احتياطية لـ MongoDB، والتحقق من المدخلات (مثل Zod/Joi) وسياسة لحذف صور Cloudinary عند حذف العقار إذا كان ذلك مطلوباً.
