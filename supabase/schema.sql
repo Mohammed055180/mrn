@@ -42,6 +42,9 @@ create table if not exists public.listing_contacts (
   created_at timestamptz not null default now()
 );
 
+create index if not exists listing_contacts_user_id_idx
+  on public.listing_contacts (user_id);
+
 -- Keep any contact numbers from the first draft private, then remove the public
 -- column. This block is safe when the old column does not exist.
 do $$
